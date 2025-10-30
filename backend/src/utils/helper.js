@@ -1,7 +1,7 @@
 
 const User = require("../model/user.schema")
 const validate = require("validator");
-const validateUserData = (req)=>{
+const validateUserData = (req,res)=>{
     const requiredKeys = new Set(Object.keys(User.schema.paths));
     const validkeys = Object.keys(req.body).every((key)=>requiredKeys.has(key)); 
     if(!validkeys){

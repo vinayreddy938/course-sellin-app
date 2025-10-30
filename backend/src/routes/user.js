@@ -6,7 +6,7 @@ const User = require("../model/user.schema")
 const jwt = require("jsonwebtoken")
 userRouter.post("/signup",async(req,res)=>{
     try{ 
-        validateUserData(req); 
+        validateUserData(req,res); 
         const {firstName,lastName,email,password} = req.body;
         const isUserFound =  await User.findOne({email});
         if(isUserFound){
