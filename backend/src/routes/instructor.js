@@ -96,5 +96,21 @@ instructorRouter.patch("/edit/course/:id",auth,RoleBased("instructor"),async(req
     }
 
 })
+instructorRouter.get("/my-courses",auth,RoleBased("instructor"),async(req,res)=>{
+  try{ 
+      const currentUser = req.user;
+      const courses = await Course.find({instructor:currentUser._id}); 
+      if(courses.length ===0){
+      return res.status(404).json({message:"no courses"})
+
+      } 
+      return res.status(200).json({data:courses});
+
+
+
+  }catch(err){
+      return res.status(500).json({message:err.message});
+  }
+})
 
 module.exports = instructorRouter
