@@ -27,6 +27,7 @@ const UserSchema = new Schema({
         required:true,
         minlength:6,
         maxlength:120,
+        select: false
 
     },
     role: {
