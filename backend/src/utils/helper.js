@@ -24,4 +24,13 @@ const validateUserData = (req,res)=>{
     }
 
 }
-module.exports = validateUserData;
+
+const validateFileds =(req,res)=>{
+      const requiredKeys = new Set(Object.keys(User.schema.paths));
+    const validkeys = Object.keys(req.body).every((key)=>requiredKeys.has(key)); 
+    if(!validkeys){
+        return res.status(402).json({message:"Invalid Keys"})
+    }
+
+}
+module.exports = {validateUserData,validateFileds};

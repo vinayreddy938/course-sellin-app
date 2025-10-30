@@ -1,9 +1,10 @@
 const {Router} = require("express");
 const userRouter = Router();
-const validateUserData = require("../utils/helper")
+const {validateUserData} = require("../utils/helper")
 const bcrypt = require("bcrypt");
 const User = require("../model/user.schema")
 const jwt = require("jsonwebtoken")
+require("dotenv").config();
 userRouter.post("/signup",async(req,res)=>{
     try{ 
         validateUserData(req,res); 
@@ -39,7 +40,7 @@ userRouter.post("/login",async(req,res)=>{
         }
         const user = await User.findOne({email});
         if(user){
-            const token =  jwt.sign({_id:user._id},"SECRETKEY");
+            const token =  jwt.sign({_id:user._id},process.env.SECRET_KEY);
             res.cookie("token",token);
             return res.status(200).json({data:user})
         }else{
