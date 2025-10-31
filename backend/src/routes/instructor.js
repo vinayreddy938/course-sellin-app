@@ -5,6 +5,8 @@ const validateUserData = require("../utils/helper")
 const bcrypt = require("bcrypt")
 const  {auth,RoleBased} = require("../middleware/auth")
 const  Course = require("../model/course.schema");
+const upload = require("../middleware/upload");
+const uploadToCloudinary = require("../utils/uploadToCloudinary")
 instructorRouter.post("/signup",async(req,res)=>{
     try{ 
             validateUserData(req,res); 
@@ -26,7 +28,10 @@ instructorRouter.post("/signup",async(req,res)=>{
         }
 
 })
-instructorRouter.post("/add/course",auth,RoleBased("instructor"),async(req,res)=>{
+instructorRouter.post("/add/course",auth,RoleBased("instructor"),upload.fields([
+    { name: "coverPhoto", maxCount: 1 },
+    { name: "thumbnail", maxCount: 1 },
+  ]),async(req,res)=>{
     try{
         const {courseName,startDate,endDate,instructor,price,sections,description} = req.body;
         if(!courseName){
@@ -37,9 +42,16 @@ instructorRouter.post("/add/course",auth,RoleBased("instructor"),async(req,res)=
         }
         if(!description){
             return res.status(400).json({message:"description required"})
-        }
+        } 
+
+        const coverResult = req.files.coverPhoto
+        ? await uploadToCloudinary(req.files.coverPhoto[0].buffer, "course_covers")
+        : null;  
+        const thumbResult = req.files.thumbnail
+        ? await uploadToCloudinary(req.files.thumbnail[0].buffer, "course_thumbnails")
+        : null;
+
        
-        const course = new Course({courseName,price,description,instructor:req.user._id});
         if(startDate!=null){
             course.startDate = startDate;
         }
@@ -49,7 +61,21 @@ instructorRouter.post("/add/course",auth,RoleBased("instructor"),async(req,res)=
         if(sections!=null){
             course.sections = sections;
         }
+        console.log(thumbResult.public_id)
+          const course = new Course({
+        courseName,
+        price,
+        description,
+        startDate,
+        endDate,
+        instructor: req.user._id,
+        coverPhoto: coverResult?.secure_url,
+        coverPhotoPublicId:coverResult.public_id,
+        thumbnail: thumbResult?.secure_url,
+        thumbnailPublicId:thumbResult.public_id
+      });
         const savedCourse = await course.save();
+
         return res.status(200).json({data:savedCourse});
         
  
@@ -57,7 +83,38 @@ instructorRouter.post("/add/course",auth,RoleBased("instructor"),async(req,res)=
         res.status(500).json({message:err.message})
     }
 })
+instructorRouter.post("/course/:courseId/section/:sectionIndex/lesson/:lessonIndex/video",auth,RoleBased("instructor"),upload.single("video"),async(req,res)=>{ 
+    try{
+        const { courseId, sectionIndex, lessonIndex } = req.params;  
+         const file = req.file; 
+         if (!file) {
+        return res.status(400).json({ message: "No video file provided" });
+        }
+        const course = await Course.findById(courseId);
+         if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+       const uploadResult = await uploadToCloudinary(
+        file.buffer,
+        "course_videos",
+        "video"
+      );
+      course.sections[sectionIndex].lessons[lessonIndex].videoUrl =
+        uploadResult.secure_url; 
+        course.sections[sectionIndex].lessons[lessonIndex].videoPublicId = upload.public_id;
+          await course.save(); 
+          return res.status(200).json({message:"Your video uploaded SuceessFully",
+            videoUrl: uploadResult.secure_url
+          });
+
+    }catch(err){
+        res.status(500).json({ message: err.message });
+
+    }
+
+})
 instructorRouter.patch("/edit/course/:id",auth,RoleBased("instructor"),async(req,res)=>{
+
     try{
         validateUserData.validateFileds(req,res);
         const {courseName,startDate,endDate,instructor,price,sections,description} = req.body; 
@@ -112,5 +169,7 @@ instructorRouter.get("/my-courses",auth,RoleBased("instructor"),async(req,res)=>
       return res.status(500).json({message:err.message});
   }
 })
+
+
 
 module.exports = instructorRouter

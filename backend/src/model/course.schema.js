@@ -12,6 +12,10 @@ const courseSchema = new Schema({
     ref: "Instructor",
     required: true,
   },
+  thumbnail: String, 
+    thumbnailPublicId: String, 
+    coverPhoto: String,
+    coverPhotoPublicId: String,
    price: {
     type: Number,
     required: true,
@@ -21,7 +25,7 @@ const courseSchema = new Schema({
     type: String,
     required: true,
     minlength: 50,
-    maxlength:500 // optional: make sure it’s at least 20 chars
+    maxlength:500 
   },
   sections:[
     {
@@ -30,7 +34,10 @@ const courseSchema = new Schema({
             {
                 title: { type: String, required: true },
                 videoUrl:{type:String},
+                videoPublicId:String,
+
                 cheatSheetUrl:{type:String},
+                cheatSheetPublicId:String,
                 duration: { type: Number }
             }
         ]
