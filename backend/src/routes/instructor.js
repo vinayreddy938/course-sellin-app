@@ -33,8 +33,7 @@ instructorRouter.post('/signup', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-instructorRouter.post(
-  '/add/course',
+instructorRouter.post('/add/course',
   auth,
   RoleBased('instructor'),
   upload.fields([
@@ -88,8 +87,7 @@ instructorRouter.post(
     }
   },
 );
-instructorRouter.post(
-  '/course/:courseId/section/:sectionIndex/lesson/:lessonIndex/video',
+instructorRouter.post('/course/:courseId/section/:sectionIndex/lesson/:lessonIndex/video',
   auth,
   RoleBased('instructor'),
   upload.single('video'),
@@ -129,8 +127,7 @@ instructorRouter.post(
     }
   },
 );
-instructorRouter.post(
-  '/course/:courseId/section/:sectionIndex/lesson/:lessonIndex/cheatsheet',
+instructorRouter.post('/course/:courseId/section/:sectionIndex/lesson/:lessonIndex/cheatsheet',
   auth,
   RoleBased('instructor'),
   async (req, res) => {
@@ -157,8 +154,7 @@ instructorRouter.post(
     }
   },
 );
-instructorRouter.patch(
-  '/edit/course/:id',
+instructorRouter.patch('/edit/course/:id',
   auth,
   RoleBased('instructor'),
   async (req, res) => {
@@ -199,11 +195,7 @@ instructorRouter.patch(
   },
 );
 
-instructorRouter.get(
-  '/my-courses',
-  auth,
-  RoleBased('instructor'),
-  async (req, res) => {
+instructorRouter.get('/my-courses',auth,RoleBased('instructor'),async (req, res) => {
     try {
       const currentUser = req.user;
       const courses = await Course.find({ instructor: currentUser._id });
@@ -217,8 +209,7 @@ instructorRouter.get(
   },
 );
 
-instructorRouter.post(
-  '/:courseId/section',
+instructorRouter.post('/:courseId/section',
   auth,
   RoleBased('instructor'),
   async (req, res) => {
@@ -250,8 +241,7 @@ instructorRouter.post(
     }
   },
 );
-instructorRouter.post(
-  '/:courseId/section/:sectionIndex/lesson',
+instructorRouter.post('/:courseId/section/:sectionIndex/lesson',
   auth,
   RoleBased('instructor'),
   async (req, res) => {
@@ -285,8 +275,7 @@ instructorRouter.post(
     }
   },
 );
-instructorRouter.delete(
-  '/:courseId/section/:sectionIndex',
+instructorRouter.delete('/:courseId/section/:sectionIndex',
   auth,
   RoleBased('instructor'),
   async (req, res) => {
@@ -313,8 +302,7 @@ instructorRouter.delete(
     }
   },
 );
-instructorRouter.delete(
-  '/:courseId/section/:sectionIndex/lesson/:lessonIndex',
+instructorRouter.delete('/:courseId/section/:sectionIndex/lesson/:lessonIndex',
   auth,
   RoleBased('instructor'),
   async (req, res) => {
@@ -339,8 +327,7 @@ instructorRouter.delete(
     }
   },
 );
-instructorRouter.get(
-  '/:courseId/section/:sectionIndex/lesson/:lessonIndex',
+instructorRouter.get('/:courseId/section/:sectionIndex/lesson/:lessonIndex',
   auth,
   RoleBased('instructor', 'student'),
   async (req, res) => {
@@ -364,8 +351,7 @@ instructorRouter.get(
     }
   },
 );
-instructorRouter.get(
-  '/:courseId/section/:sectionIndex/lesson/:lessonIndex/cheatsheet',
+instructorRouter.get('/:courseId/section/:sectionIndex/lesson/:lessonIndex/cheatsheet',
   auth,
   RoleBased('instructor', 'student'),
   async (req, res) => {
@@ -389,8 +375,7 @@ instructorRouter.get(
     }
   },
 );
-instructorRouter.get(
-  '/:courseId/sections',
+instructorRouter.get('/:courseId/sections',
   auth,
   RoleBased('instructor'),
   async (req, res) => {
@@ -405,8 +390,7 @@ instructorRouter.get(
     }
   },
 );
-instructorRouter.delete(
-  '/delete/:courseId',
+instructorRouter.delete('/delete/:courseId',
   auth,
   RoleBased('instructor'),
   async (req, res) => {
@@ -443,8 +427,7 @@ instructorRouter.delete(
     }
   },
 );
-instructorRouter.delete(
-  '/delete/:courseId/section/:sectionIndex',
+instructorRouter.delete('/delete/:courseId/section/:sectionIndex',
   auth,
   RoleBased('instructor'),
   async (req, res) => {
@@ -477,8 +460,7 @@ instructorRouter.delete(
     }
   },
 );
-instructorRouter.get(
-  '/profile',
+instructorRouter.get('/profile',
   auth,
   RoleBased('instructor'),
   async (req, res) => {
@@ -489,9 +471,7 @@ instructorRouter.get(
     }
   },
 );
-instructorRouter.get(
-  '/dashboard',
-  auth,
+instructorRouter.get('/dashboard',auth,
   RoleBased('instructor'),
   async (req, res) => {
     try {
@@ -523,5 +503,6 @@ instructorRouter.get(
     }
   },
 );
+
 
 module.exports = instructorRouter;

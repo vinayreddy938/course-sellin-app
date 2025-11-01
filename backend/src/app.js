@@ -4,11 +4,13 @@ const db = require("./config/db")
 const userRouter = require("./routes/user")
 const instructorRouter = require("./routes/instructor")
 const cookieParser = require("cookie-parser");
+const reviewRouter = require("./routes/review")
 app.use(cookieParser())
 app.use(express.json())
 
 app.use("/api/v1/user",userRouter);
 app.use("/api/v1/instructor",instructorRouter);
+app.use("/api/v1/courses",reviewRouter)
 
 
 

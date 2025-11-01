@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const { RoleBased ,auth} = require("../middleware/auth");
 const Course = require("../model/course.schema")
 const Enrollment = require("../model/enrollment.schema")
+const Review = require("../model/review.schema")
 
 require("dotenv").config();
 userRouter.post("/signup",async(req,res)=>{
@@ -169,7 +170,9 @@ userRouter.get("/my-enrollments",auth,RoleBased("user"),async(req,res)=>{
     }catch(err){
         res.status(500).json({message:err.message})
     }
-})
+}) 
+
+
 
 
 
