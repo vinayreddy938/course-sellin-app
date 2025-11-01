@@ -3,7 +3,11 @@ const userRouter = Router();
 const {validateUserData} = require("../utils/helper")
 const bcrypt = require("bcrypt");
 const User = require("../model/user.schema")
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
+const { RoleBased ,auth} = require("../middleware/auth");
+const Course = require("../model/course.schema")
+const Enrollment = require("../model/enrollment.schema")
+
 require("dotenv").config();
 userRouter.post("/signup",async(req,res)=>{
     try{ 
@@ -39,13 +43,18 @@ userRouter.post("/login",async(req,res)=>{
             return res.status(401).json({message:"please must provide password"})
         }
         const user = await User.findOne({email});
-        if(user){
+        if(!user){
+             return res.status(404).json({message:"user not registered"})
+        }
+        const isPasswordValid =await bcrypt.compare(password,user.password);
+        if(!isPasswordValid){
+            return res.status(401).json({message:"Invalid Credentials"})
+        }
+        
             const token =  jwt.sign({_id:user._id},process.env.SECRET_KEY);
             res.cookie("token",token);
             return res.status(200).json({data:user})
-        }else{
-            return res.status(404).json({message:"user not registered"})
-        }
+        
 
     }catch(err){
          res.status(500).json({message:err.message})
@@ -53,5 +62,116 @@ userRouter.post("/login",async(req,res)=>{
     }
 
 })
+userRouter.get("/courses",auth,RoleBased("user"),async(req,res)=>{ 
+    try{
+        const courses = await Course.find().select("_id courseName price description thumbnail instructor")
+      .populate("instructor", "firstName lastName email"); 
+        if(courses.length==0){
+         return   res.status(404).json({message:"no courses found"})
+
+        } 
+        return res.status(200).json({data:{courses}})
+
+    }catch(err){
+        res.status(500).json({message:err.message})
+    }
+
+}) 
+userRouter.get("/view-course/:courseId",auth,RoleBased("user"),async(req,res)=>{
+    try{   
+        const{courseId} = req.params;
+        const course = await Course.findById(courseId).select("courseName description price sections instructor")
+           .populate("instructor", "firstName lastName email profileImage");
+        if(!course){
+            return res.status(404).json({message:"course details not found"})
+        }
+        return res.status(200).json({data:course})
+       
+
+    }catch(err){
+        return res.status(500).json({message:err.message})
+    }
+})  
+userRouter.post("/checkout/:courseId",auth,RoleBased("user"),async(req,res)=>{
+    try{
+    const { courseId } = req.params;
+    const course = await Course.findById(courseId);
+
+    if (!course) return res.status(404).json({ message: "Course not found" })
+    const isAlreadyEnrolled = await Enrollment.findOne({studentId: req.user._id,instructorId: course.instructor,status: "completed"}); 
+     if(isAlreadyEnrolled){
+        return res.status(400).json({message:"You are already enrolled"})
+     }
+    const enrollment = await Enrollment.create({
+      studentId: req.user._id,
+      instructorId: course.instructor,
+      courseId: course._id,
+      amount: course.price,
+      paymentId: "fake_phonepe_txn_" + Date.now(),
+      status: "completed", 
+    });
+    res.status(200).json({message:"payment sucessfully",enrollment});
+  }catch(err){
+    res.status(500).json({message:err.message})
+  }
+
+
+})
+userRouter.get("/course-content/:courseId",auth,RoleBased("user"),async(req,res)=>{
+    try{
+        //checking user is in enrollment 
+        const{courseId} = req.params;
+        const enrollment = await Enrollment.findOne({courseId,studentId:req.user._id,status:"completed"}) 
+        if(!enrollment){
+            return res.status(403).json({ message: "Access denied: You must enroll in this course to view content.",})
+        }
+          const course = await Course.findById(courseId)
+        .select("courseName description sections instructor")
+        .populate("instructor", "firstName lastName email profileImage");
+
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      return res.status(200).json({ data: course });
+
+    }catch(err){
+        return res.status(500).json({message:err.message})
+    }
+
+})
+userRouter.get("/profile",auth,RoleBased("user"),async(req,res)=>{
+  try{ 
+    const{firstName,lastName,email,bio,profileImage} = req.user;
+
+        
+    return res.status(200).json({firstName,lastName,email,bio,profileImage });
+
+  }catch(err){
+    return res.status(500).json({message:err.message})
+
+  }
+}) 
+userRouter.post("/logout",auth,(req, res) => {
+  res.clearCookie("token");
+  return res.status(200).json({ message: "Logout successful" });
+});
+userRouter.get("/my-enrollments",auth,RoleBased("user"),async(req,res)=>{
+    try{
+        const enrollments = await Enrollment.find({studentId:req.user._id,status:"completed"}).populate("courseId", "courseName instructor thumbnail price")
+      .populate("instructorId", "firstName lastName email");
+;
+        if(enrollments.length==0){
+            return res.status(404).json({message:"You have are not enrolled in any courses"})
+        } 
+         return res.status(200).json({ data: enrollments });
+        
+    }catch(err){
+        res.status(500).json({message:err.message})
+    }
+})
+
+
+
 
 module.exports = userRouter;

@@ -1,5 +1,6 @@
 const {Schema,model} = require("mongoose");
 const ObjectId = Schema.ObjectId;
+const deleteFromCloudinary = require("../utils/deleteFromCloudinary");
 const courseSchema = new Schema({
     courseName:{
         type:String,
@@ -44,5 +45,6 @@ const courseSchema = new Schema({
     }
   ]
 },{timestamps:true}) 
+courseSchema.index({ courseName: 'text', description: 'text' });
 
 module.exports = model("course",courseSchema);

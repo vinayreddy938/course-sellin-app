@@ -25,14 +25,21 @@ const auth = async(req,res,next)=>{
     }
 }
 
-const RoleBased = (allowedRole)=>{
-    return(req,res,next)=>{ 
-        console.log(req.user.role)
-        if(req.user.role != allowedRole){
-             return res.status(403).json({ message: "Access denied: insufficient permissions" })
+const RoleBased = (...allowedRoles) => {
+    return (req, res, next) => { 
+        if (!req.user) {
+            return res.status(401).json({ 
+                message: "Authentication required" 
+            });
         }
-        next()
-
-    }
-}
+        
+        if (!allowedRoles.includes(req.user.role)) {
+            return res.status(403).json({ 
+                message: `Access denied. Required role: ${allowedRoles.join(' or ')}` 
+            });
+        }
+        
+        next();
+    };
+};
 module.exports = {auth,RoleBased};

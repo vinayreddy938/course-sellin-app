@@ -45,23 +45,7 @@ const UserSchema = new Schema({
       type: String, // optional (Cloudinary URL)
       default: "https://cdn-icons-png.flaticon.com/512/1077/1077114.png",
     },
-    enrolledCourses:[{
-        type:String,
-        courseId: {
-          type: ObjectId,
-          ref: "Course",
-        },
-        progress: {
-          type: Number,
-          default: 0,
-        },
-        enrolledAt: {
-          type: Date,
-          default: Date.now,
-        }
-
-
-    }]
+    
 
 
 },{ timestamps: true })
