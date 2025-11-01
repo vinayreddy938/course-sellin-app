@@ -24,7 +24,7 @@ commentRouter.post('/:courseId/review',auth,RoleBased('user'),async (req, res) =
       if (!course) {
         return res.status(404).json({ message: 'course not found' });
       }
-      const isEnrolled = await Enrollment.findOne({
+        const isEnrolled = await Enrollment.findOne({
         studentId: req.user._id,
         courseId: courseId,
       });
@@ -62,12 +62,8 @@ commentRouter.get('/:courseId/reviews', auth, async (req, res) => {
     const skip = (page - 1) * limit; //if page=1 means it will take first 10 documents skip = (1-1)*10 =0 skip docuemts
     // page=2 skip = (2-1)*10 = 10 skip first 10 documents
 
-    const review = (
-      await Review.find({ courseId }).populate(
-        'studentId',
-        'firstName lastName profileImage',
-      )
-    ).sort({ createdAt: -1 }).skip(skip).limit(limit);  
+    const review = 
+      await Review.find({ courseId }).populate('studentId','firstName lastName profileImage').sort({ createdAt: -1 }).skip(skip).limit(limit);  
     const reviewCount = await Review.countDocuments({courseId}); 
     const avgRating = await Review.aggregate([
         {$match:{courseId:new mongoose.Types.ObjectId(courseId)}},
@@ -98,10 +94,8 @@ commentRouter.patch("/:courseId/review",auth,RoleBased("user","admin"),async(req
             if (rating < 1 || rating > 5) {
                 return res.status(400).json({ message: "Rating must be between 1 and 5" });
             }
-            review.rating = rating;
-        
-
-       review.comment = comment;
+           if (rating) review.rating = rating;
+          if (comment) review.comment = comment;
 
         await review.save(); 
         return res.status(201).json({message:"updated sucessfully",
@@ -131,3 +125,4 @@ commentRouter.delete("/:courseId/review",auth,RoleBased("user","admin"),async(re
 
 
 module.exports = commentRouter;
+

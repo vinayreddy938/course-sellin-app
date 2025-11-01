@@ -420,7 +420,7 @@ instructorRouter.delete('/delete/:courseId',
             await deleteFromCloudinary(lesson.cheatSheetPublicId, 'raw');
         }
       }
-      await course.deleteOne({ _id: courseId });
+      await course.deleteOne();
       return res.status(200).json({ message: 'course deleted suceesssfully' });
     } catch (err) {
       return res.status(500).json({ message: err.message });
@@ -454,6 +454,7 @@ instructorRouter.delete('/delete/:courseId/section/:sectionIndex',
         }
       }
       course.sections.splice(sectionIndex, 1);
+      await course.save(); 
       return res.status(200).json({ message: 'section deleted suceesssfully' });
     } catch (err) {
       return res.status(500).json({ message: err.message });
@@ -476,7 +477,7 @@ instructorRouter.get('/dashboard',auth,
   async (req, res) => {
     try {
       const enrollements = await Enrollment.find({
-        instructorID: req.user._id,
+        instructorId: req.user._id,
         status: 'completed',
       });
 
