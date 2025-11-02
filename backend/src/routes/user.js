@@ -1,4 +1,4 @@
-const {Router} = require("express");
+const {Router, json} = require("express");
 const userRouter = Router();
 const {validateUserData} = require("../utils/helper")
 const bcrypt = require("bcrypt");
@@ -8,6 +8,9 @@ const { RoleBased ,auth} = require("../middleware/auth");
 const Course = require("../model/course.schema")
 const Enrollment = require("../model/enrollment.schema")
 const Review = require("../model/review.schema")
+const upload = require('../middleware/upload');
+const removeFromCloudinary = require("../utils/deleteFromCloudinary")
+const uploadToCloudinary = require("../utils/uploadToCloudinary")
 
 require("dotenv").config();
 userRouter.post("/signup",async(req,res)=>{
@@ -171,6 +174,72 @@ userRouter.get("/my-enrollments",auth,RoleBased("user"),async(req,res)=>{
         res.status(500).json({message:err.message})
     }
 }) 
+userRouter.patch("/profile",auth,async(req,res)=>{
+    try{
+        validateFileds(req.body);
+        const{firstName,lastName,bio} = req.body;
+        const user = req.user;
+        if (!firstName && !lastName && !bio) {
+              return res.status(400).json({ message: "No fields provided to update" });
+         } 
+
+        if(firstName!=null){
+            user.firstName = firstName
+
+        }
+        if(lastName!=null){
+            user.lastName = lastName
+        }
+        if(bio!=null){
+            user.bio = bio;
+        }
+        await user.save();
+        return res.status(200).json({message:"profile updated successfully",data:user})
+
+    }catch(err){
+        res.status(500).json({message:err.message})
+    }
+
+}) 
+userRouter.patch("/change-profile",auth,upload.single("profileImg"),async(req,res)=>{
+    try{ 
+        const file = req.file;
+        const user = req.user;
+        if(!file){
+            return res.status(404).json({message:"no image selected"});
+        }
+        if(user.publicId){
+            await removeFromCloudinary(user.publicId,"image");
+        } 
+       const uploadItem =  await uploadToCloudinary(file.buffer,"profile-images");
+       user.profileImage = uploadItem.secure_url;
+       user.publicId = uploadItem.public_id; 
+       await user.save();
+       return res.json({message:"profile updated sucessfully" , data:user})
+
+
+    }catch(err){
+        return res.status(500).json({message:err.message})
+    }
+})
+userRouter.get("/email-exist",async(req,res)=>{ 
+    try{ 
+        const {email} = req.query;
+          if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+        const user = await User.findOne({email});
+        if(user){
+         return    res.status(400).json({message:"email id already exist"})
+
+        }
+        res.status(200).json({message:"ok"})
+
+    }catch(err){
+        res.status(500).json({message:err.message})
+    }
+
+})
 
 
 
