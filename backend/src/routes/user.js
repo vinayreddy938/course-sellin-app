@@ -46,7 +46,7 @@ userRouter.post("/login",async(req,res)=>{
         if(!password){
             return res.status(401).json({message:"please must provide password"})
         }
-        const user = await User.findOne({email});
+        const user = await User.findOne({email}).select('+password');
         if(!user){
              return res.status(404).json({message:"user not registered"})
         }
