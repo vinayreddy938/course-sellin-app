@@ -4,7 +4,8 @@ import { URL } from '../utils/helper';
 import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
 
-const StudentSignIn = () => {
+const StudentSignIn = ({role}) => {
+  const user =( role==="user"?"student":role);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -39,7 +40,7 @@ const StudentSignIn = () => {
     if (Object.keys(newErrors).length === 0) {
       setLoading(true);
       try {
-        await axios.post(URL + 'user/signup', {
+        await axios.post(URL + `${user}/signup`, {
           firstName,
           lastName,
           email,
@@ -48,6 +49,7 @@ const StudentSignIn = () => {
         toast.success('Registered Successfully! 🎉');
         navigate('/login');
       } catch (err) {
+        console.log(err)
         const errorMessage = err?.response?.data?.message || 'Registration failed';
         toast.error(errorMessage);
       } finally {
@@ -80,7 +82,7 @@ const StudentSignIn = () => {
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Student Sign Up
+         { user.charAt(0).toUpperCase() + user.slice(1)} Sign Up
         </h2>
 
         <form onSubmit={submitData} className="space-y-4">
