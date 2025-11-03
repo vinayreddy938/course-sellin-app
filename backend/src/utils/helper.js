@@ -33,4 +33,4 @@ const validateFileds =(req,res)=>{
     }
 
 }
-module.exports = {validateUserData,validateFileds};
+module.exports = { validateUserData, validateFileds };
