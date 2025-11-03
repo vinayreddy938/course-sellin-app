@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const User = require('../model/user.schema');
 const instructorRouter = Router();
-const validateUserData = require('../utils/helper');
+const {validateUserData} = require('../utils/helper');
 const bcrypt = require('bcrypt');
 const { auth, RoleBased } = require('../middleware/auth');
 const Course = require('../model/course.schema');
