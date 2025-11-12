@@ -11,7 +11,6 @@ const Review = require("../model/review.schema")
 const upload = require('../middleware/upload');
 const removeFromCloudinary = require("../utils/deleteFromCloudinary")
 const uploadToCloudinary = require("../utils/uploadToCloudinary")
-
 require("dotenv").config();
 userRouter.post("/signup",async(req,res)=>{
     try{ 
@@ -144,7 +143,7 @@ userRouter.get("/course-content/:courseId",auth,RoleBased("user"),async(req,res)
     }
 
 })
-userRouter.get("/profile",auth,RoleBased("user"),async(req,res)=>{
+userRouter.get("/profile",auth,RoleBased("user","instructor"),async(req,res)=>{
   try{ 
     const{firstName,lastName,email,bio,profileImage} = req.user;
 
@@ -239,11 +238,7 @@ userRouter.get("/email-exist",async(req,res)=>{
         res.status(500).json({message:err.message})
     }
 
-})
-
-
-
-
+})  
 
 
 module.exports = userRouter;

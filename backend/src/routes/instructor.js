@@ -472,38 +472,162 @@ instructorRouter.get('/profile',
     }
   },
 );
-instructorRouter.get('/dashboard',auth,
-  RoleBased('instructor'),
-  async (req, res) => {
-    try {
-      const enrollements = await Enrollment.find({
-        instructorId: req.user._id,
-        status: 'completed',
-      });
+instructorRouter.get('/dashboard', auth, RoleBased('instructor'), async (req, res) => {
+  try {
+    const instructorId = req.user._id;
+    
+    // Get date 6 months ago
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
 
-      const totalStudents = new Set(
-        enrollements.map(item => item.studentId),
-      ).size();
-      const totalEarnings = enrollements.reduce(
-        (sum, enroll) => sum + (enroll.amount || 0),
-        0,
-      );
-      const totalCourses = await Course.countDocuments({
-        instructor: req.user._id,
-      });
+    // 1. Total students, earnings, and enrollments count using aggregation
+    const enrollmentStats = await Enrollment.aggregate([
+      {
+        $match: {
+          instructorId: instructorId,
+          status: 'completed'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalEarnings: { $sum: '$amount' },
+          totalEnrollments: { $sum: 1 },
+          uniqueStudents: { $addToSet: '$studentId' }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          totalEarnings: 1,
+          totalEnrollments: 1,
+          totalStudents: { $size: '$uniqueStudents' }
+        }
+      }
+    ]);
 
-      return res.status(200).json({
-        data: {
-          totalCourses,
-          totalStudents,
-          totalEarnings,
-        },
+    // 2. Total courses count
+    const totalCourses = await Course.countDocuments({
+      instructor: instructorId
+    });
+
+    // 3. Last 6 months revenue and enrollments
+    const last6MonthsRevenue = await Enrollment.aggregate([
+      {
+        $match: {
+          instructorId: instructorId,
+          status: 'completed',
+          createdAt: { $gte: sixMonthsAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          revenue: { $sum: '$amount' },
+          enrollments: { $sum: 1 },
+          uniqueStudents: { $addToSet: '$studentId' }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      },
+      {
+        $project: {
+          _id: 1,
+          revenue: 1,
+          enrollments: 1,
+          students: { $size: '$uniqueStudents' }
+        }
+      }
+    ]);
+
+    // 4. Last 6 months courses created
+    const last6MonthsCourses = await Course.aggregate([
+      {
+        $match: {
+          instructor: instructorId,
+          createdAt: { $gte: sixMonthsAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          coursesCreated: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+
+    // Format and merge the last 6 months data
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Create a map for easy lookup
+    const revenueMap = {};
+    last6MonthsRevenue.forEach(item => {
+      const key = `${item._id.year}-${item._id.month}`;
+      revenueMap[key] = {
+        revenue: item.revenue,
+        enrollments: item.enrollments,
+        students: item.students
+      };
+    });
+
+    const coursesMap = {};
+    last6MonthsCourses.forEach(item => {
+      const key = `${item._id.year}-${item._id.month}`;
+      coursesMap[key] = item.coursesCreated;
+    });
+
+    // Fill in all 6 months with complete data
+    const last6MonthsData = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const key = `${year}-${month}`;
+      const monthLabel = `${monthNames[date.getMonth()]} ${year}`;
+      
+      const revenueData = revenueMap[key] || { revenue: 0, enrollments: 0, students: 0 };
+      const coursesCreated = coursesMap[key] || 0;
+      
+      last6MonthsData.push({
+        month: monthLabel,
+        revenue: revenueData.revenue,
+        enrollments: revenueData.enrollments,
+        students: revenueData.students,
+        coursesCreated: coursesCreated
       });
-    } catch (err) {
-      return res.status(500).json({ message: err.message });
     }
-  },
-);
+
+    const stats = enrollmentStats[0] || {
+      totalEarnings: 0,
+      totalEnrollments: 0,
+      totalStudents: 0
+    };
+
+    return res.status(200).json({
+      data: {
+        totalCourses,
+        totalStudents: stats.totalStudents,
+        totalEarnings: stats.totalEarnings,
+        last6MonthsData // Combined data for charts
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
 
 
 
